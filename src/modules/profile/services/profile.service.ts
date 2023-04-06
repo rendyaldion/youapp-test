@@ -4,19 +4,32 @@ import { Model } from "mongoose";
 import { Profile, ProfileDocument } from "src/schemas/profile.schema"
 import { User, UserDocument } from "src/schemas/user.schema"
 import { ProfileRequestDTO } from "../dtos/request/profile-request.dto";
+import { CloudinaryService } from "src/modules/cloudinary/cloudinary.service";
 
 @Injectable()
 export class ProfileService {
     constructor(
         @InjectModel(Profile.name) private readonly profileModel: Model<ProfileDocument>,
         @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+        private cloudinary :CloudinaryService,
     ) {}
 
-    async create(ProfileRequestDTO: ProfileRequestDTO, userId: string) {
+    async create(ProfileRequestDTO: ProfileRequestDTO, userId: string, image: Express.Multer.File) {
         const user = await this.userModel.findById({ _id: userId });
         if (!user) {
           throw new HttpException('user doesnt exists', HttpStatus.BAD_REQUEST);
         }
+
+        const checkProfile = await this.profileModel.findOne({ userId: userId })
+        if (checkProfile) {
+            throw new HttpException('user already has profile', HttpStatus.BAD_REQUEST);
+        }
+
+        const uploadImage = await this.cloudinary.uploadImage(image).catch(() => {
+            throw new HttpException('error when try to upload image', HttpStatus.BAD_REQUEST);
+        });
+
+        ProfileRequestDTO.displayName = uploadImage.secure_url
 
         ProfileRequestDTO.userId = userId
     

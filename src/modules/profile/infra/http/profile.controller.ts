@@ -1,7 +1,8 @@
-import { Body, Controller, Param, Post, Get, Put, UseGuards, Request } from "@nestjs/common";
+import { Body, Controller, Param, Post, Get, Put, UseGuards, Request, UseInterceptors, UploadedFile } from "@nestjs/common";
 import { ProfileService } from "../../services/profile.service";
 import { ProfileRequestDTO } from "../../dtos/request/profile-request.dto";
 import { AuthGuard } from "src/guards/auth.guards";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller()
 export class ProfileController {
@@ -9,8 +10,9 @@ export class ProfileController {
 
     @UseGuards(AuthGuard)
     @Post('/createProfile')
-    async create(@Body() ProfileRequestDTO: ProfileRequestDTO, @Request() req) {
-        return this.profileService.create(ProfileRequestDTO, req.user.sub);
+    @UseInterceptors(FileInterceptor('image'))
+    async create(@Body() ProfileRequestDTO: ProfileRequestDTO, @Request() req, @UploadedFile() image: Express.Multer.File) {
+        return this.profileService.create(ProfileRequestDTO, req.user.sub, image);
     }
 
     @UseGuards(AuthGuard)
