@@ -23,7 +23,8 @@ export class ProfileController {
 
     @UseGuards(AuthGuard)
     @Put("/updateProfile")
-    async update(@Body() ProfileRequestDTO: ProfileRequestDTO, @Request() req) {
-        return this.profileService.update(ProfileRequestDTO, req.user.sub);
+    @UseInterceptors(FileInterceptor('image'))
+    async update(@Body() ProfileRequestDTO: ProfileRequestDTO, @Request() req, @UploadedFile() image: Express.Multer.File) {
+        return this.profileService.update(ProfileRequestDTO, req.user.sub, image);
     }
 }

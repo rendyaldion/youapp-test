@@ -30,7 +30,6 @@ export class ProfileService {
         });
 
         ProfileRequestDTO.displayName = uploadImage.secure_url
-
         ProfileRequestDTO.userId = userId
     
         const createProfile = new this.profileModel(ProfileRequestDTO);
@@ -51,11 +50,24 @@ export class ProfileService {
         }
     }
 
-    async update(ProfileRequestDTO: ProfileRequestDTO, userId: string) {
-        const user = await this.profileModel.updateOne({userId: userId}, ProfileRequestDTO);
+    async update(ProfileRequestDTO: ProfileRequestDTO, userId: string, image: Express.Multer.File) {
+        const user = await this.userModel.findById({ _id: userId });
+        if (!user) {
+          throw new HttpException('user doesnt exists', HttpStatus.BAD_REQUEST);
+        }
+
+        const update = await this.profileModel.updateOne({userId: userId}, ProfileRequestDTO);
+
+        if (image != undefined) {
+            const uploadImage = await this.cloudinary.uploadImage(image).catch(() => {
+                throw new HttpException('error when try to upload image', HttpStatus.BAD_REQUEST);
+            });
+
+            ProfileRequestDTO.displayName = uploadImage.secure_url
+        }
         
         let success = true
-        if (user.modifiedCount < 1) {
+        if (update.modifiedCount < 1) {
             success = false
         }
         
